@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/libro.dart';
 import '../services/book_service.dart';
+import '../services/favorito_service.dart';
+import 'edit_book_screen.dart';
 import 'add_book_screen.dart';
 
 class BookListScreen extends StatefulWidget {
@@ -11,64 +13,112 @@ class BookListScreen extends StatefulWidget {
 }
 
 class _BookListScreenState extends State<BookListScreen> {
-  List<Libro> libros = [];
-  bool isLoading = true;
+  final BookService _bookService = BookService();
+  final FavoriteService _favoriteService = FavoriteService();
+  List<Libro> _libros = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    fetchLibros();
+    _fetchLibros();
   }
 
-  Future<void> fetchLibros() async {
+  Future<void> _fetchLibros() async {
     try {
-      final fetchedLibros = await BookService.fetchBooks();
+      final libros = await _bookService.obtenerLibros();
       setState(() {
-        libros = fetchedLibros;
-        isLoading = false;
+        _libros = libros;
+        _isLoading = false;
       });
     } catch (e) {
-      print('Error al obtener libros: $e');
+      print('Error al cargar libros: $e');
       setState(() {
-        isLoading = false;
+        _isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error al cargar los libros')),
-      );
     }
+  }
+
+  void _editarLibro(Libro libro) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditBookScreen(libro: libro),
+      ),
+    ).then((_) => _fetchLibros());
+  }
+
+  void _agregarLibro() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const AddBookScreen()),
+    ).then((_) => _fetchLibros());
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Lista de Libros')),
-      body: isLoading
+      appBar: AppBar(
+        title: const Text('Lista de Libros'),
+      ),
+      body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : libros.isEmpty
-              ? const Center(child: Text('No hay libros disponibles'))
-              : ListView.builder(
-                  itemCount: libros.length,
-                  itemBuilder: (context, index) {
-                    final libro = libros[index];
-                    return ListTile(
-                      title: Text(libro.titulo),
-                      subtitle: Text('Autor: ${libro.autor}'),
-                    );
-                  },
-                ),
+          : ListView.builder(
+              itemCount: _libros.length,
+              itemBuilder: (context, index) {
+                final libro = _libros[index];
+                final esFavorito = _favoriteService.esFavorito(libro);
+
+                return Card(
+                  margin: const EdgeInsets.all(10),
+                  elevation: 4,
+                  child: ListTile(
+                    title: Text(libro.titulo),
+                    subtitle:
+                        Text('${libro.autor} - ${libro.anioPublicacion}'),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.blue),
+                          onPressed: () => _editarLibro(libro),
+                        ),
+                        IconButton(
+                          icon: Icon(
+                            esFavorito
+                                ? Icons.favorite
+                                : Icons.favorite_border,
+                            color: Colors.pink,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              if (esFavorito) {
+                                _favoriteService.eliminarDeFavoritos(libro);
+                              } else {
+                                _favoriteService.agregarAFavoritos(libro);
+                              }
+                            });
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  esFavorito
+                                      ? 'Eliminado de favoritos'
+                                      : 'Agregado a favoritos',
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const AddBookScreen()),
-          );
-          if (result == true) {
-            fetchLibros();
-          }
-        },
+        onPressed: _agregarLibro,
         child: const Icon(Icons.add),
-        tooltip: 'Agregar libro',
-        backgroundColor: Colors.deepPurple,
       ),
     );
   }

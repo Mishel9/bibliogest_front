@@ -1,74 +1,109 @@
 import 'package:flutter/material.dart';
-import 'book_list_screen.dart';
-import 'add_book_screen.dart';
-import 'favorites_screen.dart';
-import '../services/auth_service.dart';
-import 'login_screen.dart';
+import 'package:bibliogestapp/screens/book_list_screen.dart';
+import 'package:bibliogestapp/screens/favorites_screen.dart';
+import 'package:bibliogestapp/screens/profile_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  void _logout(BuildContext context) {
-    AuthService().logout();
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final String? rol = AuthService().rol;
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Inicio'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => _logout(context),
-          ),
-        ],
+        title: const Text('BiblioGest'),
+        centerTitle: true,
+        backgroundColor: const Color.fromARGB(255, 182, 116, 200),
       ),
-      body: Center(
+      body: SingleChildScrollView(
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
+            // Imagen superior decorativa
+            SizedBox(
+              width: double.infinity,
+              height: 200,
+              child: Image.asset(
+                'assets/images/library_banner.jpg',
+                fit: BoxFit.cover,
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Texto de bienvenida estilizado
             const Text(
               'Bienvenido a BiblioGest',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const BookListScreen()),
-                );
-              },
-              child: const Text('📚 Ver Libros'),
-            ),
-            if (rol == 'ADMIN') // Solo ADMIN puede agregar libros
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const AddBookScreen()),
-                  );
-                },
-                child: const Text('➕ Agregar Libro'),
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Color.fromARGB(255, 76, 53, 80),
               ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const FavoritesScreen()),
-                );
-              },
-              child: const Text('❤️ Ver Favoritos'),
+            ),
+
+            const SizedBox(height: 10),
+
+            // Botones de navegación estilizados
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  _menuButton(
+                    context,
+                    label: 'Ver Libros',
+                    icon: Icons.library_books,
+                    color: Colors.indigo,
+                    destination: const BookListScreen(),
+                  ),
+                  const SizedBox(height: 10),
+                  _menuButton(
+                    context,
+                    label: 'Favoritos',
+                    icon: Icons.favorite,
+                    color: Colors.red,
+                    destination: FavoritesScreen(),
+                  ),
+                  const SizedBox(height: 10),
+                  _menuButton(
+                    context,
+                    label: 'Perfil',
+                    icon: Icons.person,
+                    color: Colors.blueGrey,
+                    destination: const ProfileScreen(),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _menuButton(BuildContext context,
+      {required String label,
+      required IconData icon,
+      required Color color,
+      required Widget destination}) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        icon: Icon(icon, color: Colors.white),
+        label: Text(
+          label,
+          style: const TextStyle(fontSize: 18, color: Colors.white),
+        ),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => destination),
+          );
+        },
       ),
     );
   }

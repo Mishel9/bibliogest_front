@@ -3,49 +3,52 @@ import 'package:http/http.dart' as http;
 import '../models/libro.dart';
 
 class BookService {
-  static const String _baseUrl = 'http://192.168.10.194:8080/api/libros';
+  final String baseUrl = 'http://192.168.10.194:8080/api/libros';
 
-  // ✅ Agregar libro SIN token
-  static Future<void> agregarLibro({
-    required String titulo,
-    required String autor,
-    required int anioPublicacion,
-    required String isbn,
-    required bool disponible,
-  }) async {
-    final response = await http.post(
-      Uri.parse(_baseUrl),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        'titulo': titulo,
-        'autor': autor,
-        'anioPublicacion': anioPublicacion,
-        'isbn': isbn,
-        'disponible': disponible,
-      }),
-    );
+  Future<List<Libro>> obtenerLibros() async {
+    final response = await http.get(Uri.parse(baseUrl));
 
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception('Error al agregar libro: ${response.body}');
+    if (response.statusCode == 200) {
+      List jsonResponse = json.decode(response.body);
+      return jsonResponse.map((e) => Libro.fromJson(e)).toList();
+    } else {
+      throw Exception('Error al obtener libros');
     }
   }
 
-  // 📚 Obtener lista de libros (requiere token si backend lo exige)
-  static Future<List<Libro>> fetchBooks() async {
-    final response = await http.get(
-      Uri.parse(_baseUrl),
-      headers: {
-        'Content-Type': 'application/json',
-      },
+  Future<Libro> agregarLibro(Libro libro) async {
+    final response = await http.post(
+      Uri.parse(baseUrl),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(libro.toJson()),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return Libro.fromJson(json.decode(response.body));
+    } else {
+      throw Exception('Error al agregar libro: ${response.statusCode}');
+    }
+  }
+
+  Future<void> eliminarLibro(int id) async {
+    final response = await http.delete(Uri.parse('$baseUrl/$id'));
+
+    if (response.statusCode != 204) {
+      throw Exception('Error al eliminar libro');
+    }
+  }
+
+  Future<Libro> actualizarLibroParcial(int id, Map<String, dynamic> campos) async {
+    final response = await http.patch(
+      Uri.parse('$baseUrl/$id'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(campos),
     );
 
     if (response.statusCode == 200) {
-      final List<dynamic> jsonData = jsonDecode(response.body);
-      return jsonData.map((e) => Libro.fromJson(e)).toList();
+      return Libro.fromJson(json.decode(response.body));
     } else {
-      throw Exception('Error al obtener libros: ${response.body}');
+      throw Exception('Error al actualizar libro');
     }
   }
 }

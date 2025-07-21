@@ -11,9 +11,11 @@ class AuthService {
 
   String? _token;
   String? _rol;
+  String? _usuarioId;
 
   String? get token => _token;
   String? get rol => _rol;
+  String? get usuarioId => _usuarioId;
 
   final String baseUrl = 'http://192.168.10.194:8080/api/auth';
 
@@ -73,10 +75,12 @@ class AuthService {
         final data = jsonDecode(response.body);
         _token = data['token'];
         _rol = data['rol'];
+        _usuarioId = data['id'].toString(); // ← Asegúrate que el backend devuelva 'id'
 
-        // 🔐 Guardar token y rol en almacenamiento seguro
+        // 🔐 Guardar token, rol e ID en almacenamiento seguro
         await _storage.write(key: 'token', value: _token);
         await _storage.write(key: 'rol', value: _rol);
+        await _storage.write(key: 'usuarioId', value: _usuarioId);
 
         return true;
       } else {
@@ -91,6 +95,7 @@ class AuthService {
   void logout() async {
     _token = null;
     _rol = null;
+    _usuarioId = null;
     await _storage.deleteAll(); // 🔐 Borrar datos del almacenamiento seguro
   }
 
@@ -100,5 +105,9 @@ class AuthService {
 
   static Future<String?> getRol() async {
     return await _storage.read(key: 'rol');
+  }
+
+  static Future<String?> getUsuarioId() async {
+    return await _storage.read(key: 'usuarioId');
   }
 }

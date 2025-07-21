@@ -1,51 +1,26 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import '../config/api_config.dart';
-import 'auth_service.dart';
+import '../models/libro.dart';
 
-class FavoritoService {
-  final String? _token = AuthService().token;
+class FavoriteService {
+  static final FavoriteService _instance = FavoriteService._internal();
+  factory FavoriteService() => _instance;
 
-  Future<void> agregarFavorito(int libroId) async {
-    if (_token == null) throw Exception('Token no disponible');
+  FavoriteService._internal();
 
-    await http.post(
-      Uri.parse('${ApiConfig.baseUrl}/favoritos/$libroId'),
-      headers: {
-        'Authorization': 'Bearer $_token',
-        'Content-Type': 'application/json',
-      },
-    );
+  final List<Libro> _favoritos = [];
+
+  List<Libro> getFavoritos() => _favoritos;
+
+  bool esFavorito(Libro libro) {
+    return _favoritos.any((l) => l.id == libro.id);
   }
 
-  Future<void> eliminarFavorito(int libroId) async {
-    if (_token == null) throw Exception('Token no disponible');
-
-    await http.delete(
-      Uri.parse('${ApiConfig.baseUrl}/favoritos/$libroId'),
-      headers: {
-        'Authorization': 'Bearer $_token',
-        'Content-Type': 'application/json',
-      },
-    );
-  }
-
-  Future<List<int>> obtenerFavoritos() async {
-    if (_token == null) throw Exception('Token no disponible');
-
-    final response = await http.get(
-      Uri.parse('${ApiConfig.baseUrl}/favoritos'),
-      headers: {
-        'Authorization': 'Bearer $_token',
-        'Content-Type': 'application/json',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      return data.cast<int>();
-    } else {
-      throw Exception('Error al cargar favoritos');
+  void agregarAFavoritos(Libro libro) {
+    if (!esFavorito(libro)) {
+      _favoritos.add(libro);
     }
+  }
+
+  void eliminarDeFavoritos(Libro libro) {
+    _favoritos.removeWhere((l) => l.id == libro.id);
   }
 }
